@@ -119,7 +119,7 @@ class Llama:
 
         torch.manual_seed(seed)
 
-        if local_rank > 0:
+        if _is_cuda(device) and local_rank > 0:
             sys.stdout = open(os.devnull, "w")
 
         start_time = time.time()
@@ -145,7 +145,7 @@ class Llama:
             torch.set_default_tensor_type(torch.cuda.BFloat16Tensor)
         elif _is_cuda(device):
             torch.set_default_tensor_type(torch.cuda.HalfTensor)
-        else:
+        elif device.type == torch.device('mps').type:
             torch.set_default_tensor_type(torch.float16)
         
         if model_args.vision_chunk_size > 0:
@@ -158,7 +158,7 @@ class Llama:
         model.load_state_dict(checkpoint, strict=True)
         print(f"Loaded in {time.time() - start_time:.2f} seconds")
 
-        return Llama(model, tokenizer, model_args)
+        return Llama(model, tokenizer, model_args, device = device)
 
     def __init__(self, model: Transformer, tokenizer: Tokenizer, args: ModelArgs, device: torch.device = torch.device('cuda')):
         self.args = args
